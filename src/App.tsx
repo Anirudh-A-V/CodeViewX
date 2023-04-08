@@ -7,6 +7,7 @@ function App() {
 	const [file, setFile] = useState<File | null>(null);
 	const [fileContents, setFileContents] = useState<string | null>(null);
 	const [recentFiles, setRecentFiles] = useState<string[]>([]);
+	const [openTabs, setOpenTabs] = useState<{ id: number, name: string, contents: string }[]>([]);
 
 	const db = new Dexie('file-db');
 	db.version(1).stores({
@@ -21,7 +22,6 @@ function App() {
 	useEffect(() => {
 		loadRecentFiles();
 	}, [db.files]);
-
 
 	const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
 		if (!event.target.files) {
@@ -43,6 +43,8 @@ function App() {
 			const fileContents = event.target.result;
 			console.log(fileContents);
 			setFileContents(fileContents as string);
+			const newTab = { id: openTabs.length + 1, name: file.name, contents: fileContents as string };
+			setOpenTabs([...openTabs, newTab]);
 			db.files.add({
 				name: file.name,
 				contents: fileContents as string,
@@ -59,7 +61,14 @@ function App() {
 		if (recentFile) {
 			setFile(recentFile);
 			setFileContents(recentFile.contents);
+			const newTab = { id: openTabs.length + 1, name: recentFile.name, contents: recentFile.contents };
+			setOpenTabs([...openTabs, newTab]);
 		}
+	};
+
+	const handleCloseTabClick = (id: number) => {
+		const updatedTabs = openTabs.filter((tab) => tab.id !== id);
+		setOpenTabs(updatedTabs);
 	};
 
 	return (
@@ -70,25 +79,42 @@ function App() {
 				<input type="file" onChange={handleFileUpload} />
 
 				{recentFiles.length > 0 && (
-					<div className="flex flex-col w-full mt-4">
-						<label className="text-xl font-bold">Recent Files</label>
-						{recentFiles.map((name) => (
-							<button key={name} onClick={() => handleRecentFileClick(name)}>
-								{name}
-							</button>
-						))}
+					<>
+						<label className="text-xl font-bold mt-4">Recent Files</label>
+						<ul className="list-disc ml-8">
+							{recentFiles.map((name) => (
+								<li key={name} className="cursor-pointer text-blue-600 hover:underline" onClick={() => handleRecentFileClick(name)}>
+									{name}
+								</li>
+							))}
+						</ul>
+					</>
+				)}
+				{openTabs.length > 0 && (
+					<div className="flex flex-col mt-4">
+						<label className="text-xl font-bold">Open Tabs</label>
+						<div className="flex flex-row">
+							{openTabs.map((tab) => (
+								<div key={tab.id} className="flex flex-col mx-2">
+									<button className="rounded-full bg-red-500 text-white font-bold w-4 h-4 flex items-center justify-center" onClick={() => handleCloseTabClick(tab.id)}>
+										x
+									</button>
+									<button className="mt-2 text-blue-600 hover:underline" onClick={() => setFileContents(tab.contents)}>
+										{tab.name}
+									</button>
+								</div>
+							))}
+						</div>
 					</div>
 				)}
-				{fileContents && file && (
-					<div>
-						<label className="text-xl font-bold">File Contents</label>
-						<p className="text-sm font-bold">{file.name}</p>
-						<SyntaxHighlighter language={file ? file.name.split('.').pop() : ''} style={syntaxStyle}>
+
+				{fileContents && (
+					<div className="flex flex-col mt-4">
+						<SyntaxHighlighter language="javascript" style={syntaxStyle}>
 							{fileContents}
 						</SyntaxHighlighter>
 					</div>
 				)}
-
 			</div>
 		</div>
 	);
