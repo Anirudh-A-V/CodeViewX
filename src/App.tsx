@@ -9,7 +9,7 @@ import { GrFormClose } from 'react-icons/gr';
 function App() {
 	const [file, setFile] = useState<File | null>(null);
 	const [fileContents, setFileContents] = useState<string | null>(null);
-	const [recentFiles, setRecentFiles] = useState<string[]>([]);
+	const [recentFiles, setRecentFiles] = useState<IFile[]>([]);
 	const [openTabs, setOpenTabs] = useState<{ id: number, name: string, contents: string, type: string }[]>([]);
 
 	class MyAppDatabase extends Dexie {
@@ -34,7 +34,7 @@ function App() {
 
 	async function loadRecentFiles() {
 		const recent = await db.files.orderBy('lastModified').reverse().limit(5).toArray();
-		setRecentFiles(recent.map((file: any) => file.name));
+		setRecentFiles(recent.map((file: any) => file));
 	}
 
 	useEffect(() => {
@@ -79,6 +79,10 @@ function App() {
 		const recentFile = await db.files.where('name').equals(name).first();
 		console.log(recentFile)
 		if (recentFile) {
+			if (openTabs.some((tab) => tab.name === recentFile.name)) {
+				setFileContents(recentFile.contents);
+				return;
+			}
 			setFile(recentFile as unknown as File);
 			setFileContents(recentFile.contents);
 			const newTab = { id: openTabs.length + 1, name: recentFile.name, contents: recentFile.contents, type: recentFile.type };
@@ -116,9 +120,9 @@ function App() {
 					<>
 						<label className="text-xl font-bold mt-4">Recent Files</label>
 						<ul className="list-disc ml-8">
-							{recentFiles.map((name) => (
-								<li key={name} className="cursor-pointer text-blue-600 hover:underline" onClick={() => handleRecentFileClick(name)}>
-									{name}
+							{recentFiles.map((file) => (
+								<li key={file.id} className="cursor-pointer text-blue-600 hover:underline" onClick={() => handleRecentFileClick(file.name)}>
+									{file.name}
 								</li>
 							))}
 						</ul>
