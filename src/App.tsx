@@ -4,16 +4,33 @@ import { github as syntaxStyle } from 'react-syntax-highlighter/dist/esm/styles/
 import Dexie from 'dexie';
 import { GrFormClose } from 'react-icons/gr';
 
+
+
 function App() {
 	const [file, setFile] = useState<File | null>(null);
 	const [fileContents, setFileContents] = useState<string | null>(null);
 	const [recentFiles, setRecentFiles] = useState<string[]>([]);
-	const [openTabs, setOpenTabs] = useState<{ id: number, name: string, contents: string }[]>([]);
+	const [openTabs, setOpenTabs] = useState<{ id: number, name: string, contents: string, type: string }[]>([]);
 
-	const db = new Dexie('file-db');
-	db.version(1).stores({
-		files: '++id, name, contents, extension, lastModified',
-	});
+	class MyAppDatabase extends Dexie {
+		files: Dexie.Table<IFile>;
+		constructor () {
+			super("MyAppDatabase");
+			this.version(1).stores({
+				files: '++id, name, contents, type, lastModified',
+			});
+		}
+	}
+
+	const db = new MyAppDatabase();
+	
+	interface IFile {
+		id?: number;
+		name: string;
+		contents: string;
+		type: string;
+		lastModified: Date;
+	}
 
 	async function loadRecentFiles() {
 		const recent = await db.files.orderBy('lastModified').reverse().limit(5).toArray();
@@ -45,12 +62,12 @@ function App() {
 				const fileContents = event.target.result;
 				console.log(fileContents);
 				setFileContents(fileContents as string);
-				const newTab = { id: openTabs.length + 1, name: file.name, contents: fileContents as string };
+				const newTab = { id: openTabs.length + 1, name: file.name, contents: fileContents as string, type: file.type };
 				setOpenTabs([...openTabs, newTab]);
 				db.files.add({
 					name: file.name,
 					contents: fileContents as string,
-					extension: file.name.split('.').pop() as string,
+					type: file.type,
 					lastModified: new Date(),
 				});
 			};
@@ -62,9 +79,9 @@ function App() {
 		const recentFile = await db.files.where('name').equals(name).first();
 		console.log(recentFile)
 		if (recentFile) {
-			setFile(recentFile);
+			setFile(recentFile as unknown as File);
 			setFileContents(recentFile.contents);
-			const newTab = { id: openTabs.length + 1, name: recentFile.name, contents: recentFile.contents };
+			const newTab = { id: openTabs.length + 1, name: recentFile.name, contents: recentFile.contents, type: recentFile.type };
 			setOpenTabs([...openTabs, newTab]);
 		}
 	};
@@ -127,7 +144,7 @@ function App() {
 
 				{fileContents && (
 					<div className="flex flex-col mt-4 mx-auto">
-						<SyntaxHighlighter language="javascript" style={syntaxStyle} customStyle={{background: '#f1f1f1', width: '80%', borderRadius: '30px', scrollbarWidth: 'thin'}} showLineNumbers={true} wrapLines={true}>
+						<SyntaxHighlighter language={file ? file.type.split('/').pop() : ''} style={syntaxStyle} customStyle={{background: '#f1f1f1', minWidth: '80%', borderRadius: '30px', scrollbarWidth: 'thin'}} showLineNumbers={true} wrapLines={true} wrapLongLines={true}>
 							{fileContents}
 						</SyntaxHighlighter>
 					</div>
