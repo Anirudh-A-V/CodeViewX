@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { github as syntaxStyle } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import Dexie from 'dexie';
 import { GrFormClose } from 'react-icons/gr';
+import CodeViewer from './components/CodeViewer';
 
 
 
@@ -147,11 +146,7 @@ function App() {
 				)}
 
 				{fileContents && (
-					<div className="flex flex-col mt-4 mx-auto">
-						<SyntaxHighlighter language={file ? file.type.split('/').pop() : ''} style={syntaxStyle} customStyle={{background: '#f1f1f1', minWidth: '80%', borderRadius: '30px', scrollbarWidth: 'thin'}} showLineNumbers={true} wrapLines={true} wrapLongLines={true}>
-							{fileContents}
-						</SyntaxHighlighter>
-					</div>
+					<CodeViewer fileContents={fileContents} file={file}/>
 				)}
 			</div>
 		</div>
