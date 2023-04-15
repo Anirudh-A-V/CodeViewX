@@ -5,6 +5,7 @@ import CodeViewer from './components/CodeViewer';
 import { setFile, setFileContents, setRecentFiles, setOpenTabs } from './redux/fileSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { fileState } from './redux/fileSlice';
+import Tab from './components/Tab';
 
 
 
@@ -89,7 +90,6 @@ function App() {
 
 	const handleRecentFileClick = async (name: string) => {
 		const recentFile = await db.files.where('name').equals(name).first();
-		console.log(recentFile)
 		if (recentFile) {
 			if (openTabs.some((tab) => tab.name === recentFile.name)) {
 				// setFileContents(recentFile.contents);
@@ -154,17 +154,7 @@ function App() {
 						<label className="text-xl font-bold my-5">Open Tabs</label>
 						<div className="flex flex-row">
 							{openTabs.map((tab) => (
-								<div key={tab.id} className="flex items-center bg-slate-200 justify-center pr-2 mx-2 hover:bg-slate-300 rounded-md">
-									<button className=" text-slate-900 p-2" onClick={() => {
-										// setFileContents(tab.contents)
-										dispatch(setFileContents(tab.contents))
-									}}>
-										{tab.name}
-									</button>
-									<button className="rounded-full hover:bg-red-200 text-white font-bold w-5 h-5 flex items-center justify-center" onClick={() => handleCloseTabClick(tab.id)}>
-										<GrFormClose className='w-3 h-3 text-slate-50 bg-transparent' />
-									</button>
-								</div>
+								<Tab key={tab.id} tab={tab} />
 							))}
 						</div>
 					</div>
