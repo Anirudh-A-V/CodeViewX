@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Dexie from 'dexie';
-import { GrFormClose } from 'react-icons/gr';
 import CodeViewer from './components/CodeViewer';
 import { setFile, setFileContents, setRecentFiles, setOpenTabs } from './redux/fileSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,11 +9,6 @@ import Tab from './components/Tab';
 
 
 function App() {
-	// const [file, setFile] = useState<File | null>(null);
-	// const [fileContents, setFileContents] = useState<string | null>(null);
-	// const [recentFiles, setRecentFiles] = useState<IFile[]>([]);
-	// const [openTabs, setOpenTabs] = useState<{ id: number, name: string, contents: string, type: string }[]>([]);
-
 	const dispatch = useDispatch();
 	const file = useSelector((state: fileState) => state.file.file);
 	const fileContents = useSelector((state: fileState) => state.file.fileContents);
@@ -43,7 +37,6 @@ function App() {
 
 	async function loadRecentFiles() {
 		const recent = await db.files.orderBy('lastModified').reverse().limit(5).toArray();
-		// setRecentFiles(recent.map((file: any) => file));
 		dispatch(setRecentFiles(recent.map((file: any) => file)));
 	}
 
@@ -57,8 +50,9 @@ function App() {
 			return;
 		}
 		const file = event.target.files[0];
-		// setFile(file);
+		
 		dispatch(setFile(file));
+
 		const reader = new FileReader();
 		if (!reader) {
 			console.log('File reader not supported');
@@ -71,11 +65,11 @@ function App() {
 					return;
 				}
 				const fileContents = event.target.result;
-				console.log(fileContents);
-				// setFileContents(fileContents as string);
+				
 				dispatch(setFileContents(fileContents as string));
+
 				const newTab = { id: openTabs.length + 1, name: file.name, contents: fileContents as string, type: file.type };
-				// setOpenTabs([...openTabs, newTab]);
+				
 				dispatch(setOpenTabs([...openTabs, newTab]));
 				db.files.add({
 					name: file.name,
@@ -92,38 +86,16 @@ function App() {
 		const recentFile = await db.files.where('name').equals(name).first();
 		if (recentFile) {
 			if (openTabs.some((tab) => tab.name === recentFile.name)) {
-				// setFileContents(recentFile.contents);
 				dispatch(setFileContents(recentFile.contents));
 				return;
 			}
-			// setFile(recentFile as unknown as File);
+			
 			dispatch(setFile(recentFile as unknown as File));
-			// setFileContents(recentFile.contents);
 			dispatch(setFileContents(recentFile.contents));
+
 			const newTab = { id: openTabs.length + 1, name: recentFile.name, contents: recentFile.contents, type: recentFile.type };
-			// setOpenTabs([...openTabs, newTab]);
 			dispatch(setOpenTabs([...openTabs, newTab]));
 		}
-	};
-
-	const handleCloseTabClick = (id: number) => {
-		const updatedTabs = openTabs.filter((tab) => tab.id !== id);
-		if (updatedTabs.length === 0) {
-			// setFile(null);
-			dispatch(setFile(null));
-			// setFileContents(null);
-			dispatch(setFileContents(null));
-		}
-
-		if (updatedTabs.length > 0) {
-			const lastTab = updatedTabs[updatedTabs.length - 1];
-			// setFile({ name: lastTab.name, size: 0, type: "" } as File);
-			dispatch(setFile({ name: lastTab.name, size: 0, type: "" } as File));
-			// setFileContents(lastTab.contents);
-			dispatch(setFileContents(lastTab.contents));
-		}
-		// setOpenTabs(updatedTabs);
-		dispatch(setOpenTabs(updatedTabs));
 	};
 
 	return (
